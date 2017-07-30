@@ -13,10 +13,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from pyvirtualdisplay import Display
 
 
 class crack_picture(object):
     def __init__(self, img_url1, img_url2):
+        #缓存两个图片
         self.img1, self.img2 = self.picture_get(img_url1, img_url2)
 
 
@@ -25,6 +27,7 @@ class crack_picture(object):
               "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"}
         img1 = StringIO.StringIO(self.repeat(img_url1, hd).content)
         img2 = StringIO.StringIO(self.repeat(img_url2, hd).content)
+        #返回stringIO对象
         return img1, img2
 
 
@@ -45,6 +48,7 @@ class crack_picture(object):
 
     def picture_recover(self, img, name):
         a =[39, 38, 48, 49, 41, 40, 46, 47, 35, 34, 50, 51, 33, 32, 28, 29, 27, 26, 36, 37, 31, 30, 44, 45, 43, 42, 12, 13, 23, 22, 14, 15, 21, 20, 8, 9, 25, 24, 6, 7, 3, 2, 0, 1, 11, 10, 4, 5, 19, 18, 16, 17]
+        #使用pil进行处理,返回PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=312x116对象
         im = Image.open(img)
         im_new = Image.new("RGB", (260, 116))
         for row in range(2):
@@ -88,12 +92,15 @@ class crack_picture(object):
 
 class gsxt(object):
     def __init__(self, br_name="phantomjs"):
+        #传入chrome浏览器,调用get_webdriver()方法
         self.br = self.get_webdriver(br_name)
+        #调用显式超时时间,最长超时时间为10秒，每1秒扫描一次页面
         self.wait = WebDriverWait(self.br, 10, 1.0)
         self.br.set_page_load_timeout(8)
         self.br.set_script_timeout(8)
 
 
+    #执行页面搜索
     def input_params(self, name):
         self.br.get("http://www.gsxt.gov.cn/index")
         element = self.wait_for(By.ID, "keyword")
@@ -105,22 +112,25 @@ class gsxt(object):
 
 
     def drag_pic(self):
+        #返回两个图片地址
         return (self.find_img_url(self.wait_for(By.CLASS_NAME, "gt_cut_fullbg_slice")),
                self.find_img_url(self.wait_for(By.CLASS_NAME, "gt_cut_bg_slice")))
-        
-    
+
+
     def wait_for(self, by1, by2):
         return self.wait.until(EC.presence_of_element_located((by1, by2)))
 
 
     def find_img_url(self, element):
         try:
+            #替换，将结尾为webp的扩展名替换为jpg
             return re.findall('url\("(.*?)"\)', element.get_attribute('style'))[0].replace("webp", "jpg")
         except:
             return re.findall('url\((.*?)\)', element.get_attribute('style'))[0].replace("webp", "jpg")
 
 
     def emulate_track(self, tracks):
+        #移动滑块
         element = self.br.find_element_by_class_name("gt_slider_knob")
         ActionChains(self.br).click_and_hold(on_element=element).perform()
         for x, y, t in tracks:
@@ -144,13 +154,16 @@ class gsxt(object):
         for i in [u'招商银行', u'交通银行', u'中国银行']:
         	self.hack_geetest(i)
         	time.sleep(1)
+        #退出浏览器
         self.quit_webdriver()
 
 
     def hack_geetest(self, company=u"招商银行"):
         flag = True
+        #执行页面搜索
         self.input_params(company)
         while flag:
+            #获取图片地址
             img_url1, img_url2 = self.drag_pic()
             tracks = crack_picture(img_url1, img_url2).pictures_recover()
             tsb = self.emulate_track(tracks)
@@ -179,11 +192,14 @@ class gsxt(object):
             return webdriver.PhantomJS(desired_capabilities=dcap)
 
         elif name.lower() == "chrome":
+            display = Display(visible=0, size=(1366, 768))
+            display.start()
             return webdriver.Chrome()
 
 
 if __name__ == "__main__":
     #print crack_picture("http://static.geetest.com/pictures/gt/fc064fc73/fc064fc73.jpg", "http://static.geetest.com/pictures/gt/fc064fc73/bg/7ca363b09.jpg").pictures_recover()
+    print "程序开始执行"
     gsxt("chrome").run()
 
 
